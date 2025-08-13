@@ -9,9 +9,12 @@ interface CartProps {
   onRemoveItem: (itemId: string) => void;
   isOpen: boolean;
   onClose: () => void;
+  currentUserId: string;
+  isHost: boolean;
+  onPlaceOrder: () => void;
 }
 
-export default function Cart({ items, onUpdateQuantity, onRemoveItem, isOpen, onClose }: CartProps) {
+export default function Cart({ items, onUpdateQuantity, onRemoveItem, isOpen, onClose, currentUserId, isHost, onPlaceOrder }: CartProps) {
   const [expandedPeople, setExpandedPeople] = useState<string[]>([]);
   
   const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -40,6 +43,10 @@ export default function Cart({ items, onUpdateQuantity, onRemoveItem, isOpen, on
 
   const getPersonItemCount = (personItems: CartItem[]) => {
     return personItems.reduce((sum, item) => sum + item.quantity, 0);
+  };
+
+  const canEditItem = (item: CartItem) => {
+    return item.addedByUserId === currentUserId;
   };
 
   if (!isOpen) return null;
@@ -105,36 +112,49 @@ export default function Cart({ items, onUpdateQuantity, onRemoveItem, isOpen, on
                           <div key={item.id} className="p-4 border-b last:border-b-0">
                             <div className="flex justify-between items-start mb-2">
                               <div className="flex-1">
-                                <h4 className="font-medium text-black">{item.name}</h4>
+                                <div className="flex items-center space-x-2">
+                                  <h4 className="font-medium text-black">{item.name}</h4>
+                                  {canEditItem(item) && (
+                                    <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">You</span>
+                                  )}
+                                </div>
                                 <p className="text-sm text-gray-600">${item.price.toFixed(2)} each</p>
                               </div>
-                              <button
-                                onClick={() => onRemoveItem(item.id)}
-                                className="text-red-500 hover:text-red-700 ml-2"
-                              >
-                                ✕
-                              </button>
+                              {canEditItem(item) && (
+                                <button
+                                  onClick={() => onRemoveItem(item.id)}
+                                  className="text-red-500 hover:text-red-700 ml-2"
+                                >
+                                  ✕
+                                </button>
+                              )}
                             </div>
 
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-2">
-                                <button
-                                  onClick={() => {
-                                    if (item.quantity > 1) {
-                                      onUpdateQuantity(item.id, item.quantity - 1);
-                                    }
-                                  }}
-                                  className="w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 text-sm font-bold"
-                                >
-                                  -
-                                </button>
-                                <span className="font-medium text-black">{item.quantity}</span>
-                                <button
-                                  onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                                  className="w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 text-sm font-bold"
-                                >
-                                  +
-                                </button>
+                                {canEditItem(item) ? (
+                                  <>
+                                    <button
+                                      onClick={() => {
+                                        if (item.quantity > 1) {
+                                          onUpdateQuantity(item.id, item.quantity - 1);
+                                        }
+                                      }}
+                                      className="w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 text-sm font-bold"
+                                    >
+                                      -
+                                    </button>
+                                    <span className="font-medium text-black">{item.quantity}</span>
+                                    <button
+                                      onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                                      className="w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 text-sm font-bold"
+                                    >
+                                      +
+                                    </button>
+                                  </>
+                                ) : (
+                                  <span className="font-medium text-gray-500">Quantity: {item.quantity}</span>
+                                )}
                               </div>
                               <div className="text-lg font-bold text-red-600">
                                 ${(item.price * item.quantity).toFixed(2)}
@@ -157,11 +177,18 @@ export default function Cart({ items, onUpdateQuantity, onRemoveItem, isOpen, on
               <span className="text-lg font-semibold">Total:</span>
               <span className="text-xl font-bold text-red-600">${total.toFixed(2)}</span>
             </div>
-            <button
-              className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 font-semibold"
-            >
-              Place Group Order
-            </button>
+            {isHost ? (
+              <button
+                onClick={onPlaceOrder}
+                className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 font-semibold"
+              >
+                🔔 Place Group Order (Host)
+              </button>
+            ) : (
+              <div className="text-center text-gray-500 text-sm py-3">
+                Only the host can place the group order
+              </div>
+            )}
           </div>
         )}
       </div>

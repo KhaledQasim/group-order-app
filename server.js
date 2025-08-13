@@ -16,27 +16,29 @@ io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
 
   socket.on('join-room', (data) => {
-    const { roomId, participantName } = data;
+    const { roomId, participantName, userId } = data;
     
     socket.join(roomId);
     
     if (!rooms.has(roomId)) {
-      rooms.set(roomId, {
-        id: roomId,
-        hostId: socket.id,
-        hostName: participantName,
-        participants: [],
-        cart: [],
-        createdAt: new Date()
-      });
+              rooms.set(roomId, {
+          id: roomId,
+          hostId: socket.id,
+          hostName: participantName,
+          hostUserId: userId,
+          participants: [],
+          cart: [],
+          createdAt: new Date()
+        });
     }
 
     const room = rooms.get(roomId);
-    const participant = {
-      id: socket.id,
-      name: participantName,
-      joinedAt: new Date()
-    };
+          const participant = {
+        id: socket.id,
+        name: participantName,
+        userId: userId,
+        joinedAt: new Date()
+      };
 
     room.participants.push(participant);
     
@@ -47,35 +49,53 @@ io.on('connection', (socket) => {
   });
 
   socket.on('add-to-cart', (data) => {
-    const { roomId, item } = data;
+    const { roomId, item, userId } = data;
     const room = rooms.get(roomId);
     
-    if (room) {
+    if (room && item.addedByUserId === userId) {
       room.cart.push(item);
       io.to(roomId).emit('room-updated', { room });
     }
   });
 
   socket.on('remove-from-cart', (data) => {
-    const { roomId, itemId } = data;
-    const room = rooms.get(roomId);
-    
-    if (room) {
-      room.cart = room.cart.filter(item => item.id !== itemId);
-      io.to(roomId).emit('room-updated', { room });
-    }
-  });
-
-  socket.on('update-cart-item', (data) => {
-    const { roomId, itemId, quantity } = data;
+    const { roomId, itemId, userId } = data;
     const room = rooms.get(roomId);
     
     if (room) {
       const item = room.cart.find(item => item.id === itemId);
-      if (item) {
+      if (item && item.addedByUserId === userId) {
+        room.cart = room.cart.filter(item => item.id !== itemId);
+        io.to(roomId).emit('room-updated', { room });
+      }
+    }
+  });
+
+  socket.on('update-cart-item', (data) => {
+    const { roomId, itemId, quantity, userId } = data;
+    const room = rooms.get(roomId);
+    
+    if (room) {
+      const item = room.cart.find(item => item.id === itemId);
+      if (item && item.addedByUserId === userId) {
         item.quantity = quantity;
         io.to(roomId).emit('room-updated', { room });
       }
+    }
+  });
+
+  socket.on('place-order', (data) => {
+    const { roomId, hostUserId } = data;
+    const room = rooms.get(roomId);
+    
+    // Verify that the person placing the order is the host
+    if (room && room.hostUserId === hostUserId) {
+      console.log(`Host ${room.hostName} is placing order for room ${roomId}`);
+      // Emit bell notification to all participants in the room
+      io.to(roomId).emit('order-notification', { 
+        message: `${room.hostName} is placing the group order!`,
+        hostName: room.hostName 
+      });
     }
   });
 

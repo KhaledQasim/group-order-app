@@ -21,6 +21,7 @@ export interface CartItem {
   quantity: number;
   size?: string;
   addedBy: string;
+  addedByUserId: string;
   addedAt: Date;
 }
 
@@ -28,6 +29,7 @@ export interface Room {
   id: string;
   hostId: string;
   hostName: string;
+  hostUserId: string;
   participants: Participant[];
   cart: CartItem[];
   createdAt: Date;

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
+import { v4 as uuidv4 } from 'uuid';
 import { MenuItem as MenuItemType, CartItem, Room } from '@/types';
 import { menuItems, categories } from '@/lib/menuData';
 import MenuItem from '@/components/MenuItem';
@@ -18,6 +19,8 @@ export default function GroupOrderApp() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [participantName, setParticipantName] = useState('');
+  const [currentUserId, setCurrentUserId] = useState('');
+  const [isHost, setIsHost] = useState(false);
 
   // Check for room parameter in URL
   useEffect(() => {
@@ -36,6 +39,16 @@ export default function GroupOrderApp() {
     newSocket.on('room-updated', (data: { room: Room }) => {
       setRoom(data.room);
       setCartItems(data.room.cart);
+      
+      // Check if current user is the host (get current userId from localStorage if not set yet)
+      const userId = currentUserId || localStorage.getItem('userId');
+      console.log('Host check:', { userId, roomHostUserId: data.room.hostUserId, isMatch: userId === data.room.hostUserId });
+      if (userId && data.room.hostUserId === userId) {
+        console.log('Setting user as host!');
+        setIsHost(true);
+      } else {
+        setIsHost(false);
+      }
     });
 
     newSocket.on('participant-joined', (data: { participant: { id: string; name: string; joinedAt: Date } }) => {
@@ -46,6 +59,13 @@ export default function GroupOrderApp() {
       console.log('Participant left:', data.participantId);
     });
 
+    newSocket.on('order-notification', () => {
+      // Play bell sound for all participants (except host)
+      if (!isHost) {
+        playBellSound();
+      }
+    });
+
     return () => {
       newSocket.close();
     };
@@ -53,8 +73,21 @@ export default function GroupOrderApp() {
 
   const handleJoinRoom = (roomId: string, name: string) => {
     if (socket && name.trim()) {
+      // Generate or get existing user ID
+      let userId = localStorage.getItem('userId');
+      if (!userId) {
+        userId = uuidv4();
+        localStorage.setItem('userId', userId);
+      }
+      
       setParticipantName(name);
-      socket.emit('join-room', { roomId, participantName: name });
+      setCurrentUserId(userId);
+      localStorage.setItem('userName', name);
+      
+      socket.emit('join-room', { roomId, participantName: name, userId });
+      
+      // Check if this user is creating the room (likely the host)
+      // We'll confirm this when we get the room-updated event
       setIsGroupOrderModalOpen(false);
     }
   };
@@ -65,21 +98,45 @@ export default function GroupOrderApp() {
       return;
     }
     
-    if (socket && room) {
+    if (socket && room && currentUserId) {
       cartItem.addedBy = participantName || 'Anonymous';
-      socket.emit('add-to-cart', { roomId: room.id, item: cartItem });
+      cartItem.addedByUserId = currentUserId;
+      socket.emit('add-to-cart', { roomId: room.id, item: cartItem, userId: currentUserId });
     }
   };
 
   const handleUpdateQuantity = (itemId: string, quantity: number) => {
-    if (socket && room) {
-      socket.emit('update-cart-item', { roomId: room.id, itemId, quantity });
+    if (socket && room && currentUserId) {
+      socket.emit('update-cart-item', { roomId: room.id, itemId, quantity, userId: currentUserId });
     }
   };
 
   const handleRemoveItem = (itemId: string) => {
-    if (socket && room) {
-      socket.emit('remove-from-cart', { roomId: room.id, itemId });
+    if (socket && room && currentUserId) {
+      socket.emit('remove-from-cart', { roomId: room.id, itemId, userId: currentUserId });
+    }
+  };
+
+  const playBellSound = () => {
+    try {
+      // Replace 'bell.wav' with your audio file name
+      const audio = new Audio('/bell.mp3');
+      audio.volume = 0.7; // Adjust volume (0.0 to 1.0)
+      audio.play().catch(error => {
+        console.log('Audio playback failed:', error);
+      });
+    } catch (error) {
+      console.log('Audio not supported or blocked');
+    }
+  };
+
+  const handlePlaceOrder = () => {
+    console.log('Place order clicked:', { isHost, roomId: room?.id, currentUserId });
+    if (socket && room && isHost) {
+      console.log('Emitting place-order event');
+      socket.emit('place-order', { roomId: room.id, hostUserId: currentUserId });
+    } else {
+      console.log('Cannot place order - not host or missing data');
     }
   };
 
@@ -164,6 +221,9 @@ export default function GroupOrderApp() {
         onRemoveItem={handleRemoveItem}
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
+        currentUserId={currentUserId}
+        isHost={isHost}
+        onPlaceOrder={handlePlaceOrder}
       />
 
       {/* Room Status */}
