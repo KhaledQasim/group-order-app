@@ -99,6 +99,24 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('yalla-bell', (data) => {
+    const { roomId, senderName, userId } = data;
+    const room = rooms.get(roomId);
+    
+    // Verify that the sender is actually in the room
+    if (room) {
+      const participant = room.participants.find(p => p.userId === userId);
+      if (participant) {
+        console.log(`${senderName} rang the YALLA bell in room ${roomId}`);
+        // Emit YALLA bell to ALL participants in the room (including sender)
+        io.to(roomId).emit('yalla-bell', { 
+          senderName: senderName,
+          message: `${senderName} says YALLA! 🔔`
+        });
+      }
+    }
+  });
+
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
     

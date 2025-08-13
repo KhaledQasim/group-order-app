@@ -12,9 +12,10 @@ interface CartProps {
   currentUserId: string;
   isHost: boolean;
   onPlaceOrder: () => void;
+  onYallaBell: () => void;
 }
 
-export default function Cart({ items, onUpdateQuantity, onRemoveItem, isOpen, onClose, currentUserId, isHost, onPlaceOrder }: CartProps) {
+export default function Cart({ items, onUpdateQuantity, onRemoveItem, isOpen, onClose, currentUserId, isHost, onPlaceOrder, onYallaBell }: CartProps) {
   const [expandedPeople, setExpandedPeople] = useState<string[]>([]);
   
   const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -177,12 +178,24 @@ export default function Cart({ items, onUpdateQuantity, onRemoveItem, isOpen, on
               <span className="text-lg font-semibold">Total:</span>
               <span className="text-xl font-bold text-red-600">${total.toFixed(2)}</span>
             </div>
+            
+            {/* YALLA Bell Button - Available to everyone */}
+            <div className="mb-3">
+              <button
+                onClick={onYallaBell}
+                className="w-full bg-yellow-500 text-white py-2 px-4 rounded-md hover:bg-yellow-600 font-bold text-lg"
+              >
+                🔔 YALLA! (Ring Bell for Everyone)
+              </button>
+            </div>
+            
+            {/* Place Order Button - Host only */}
             {isHost ? (
               <button
                 onClick={onPlaceOrder}
                 className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 font-semibold"
               >
-                🔔 Place Group Order (Host)
+                🛒 Place Group Order (Host)
               </button>
             ) : (
               <div className="text-center text-gray-500 text-sm py-3">

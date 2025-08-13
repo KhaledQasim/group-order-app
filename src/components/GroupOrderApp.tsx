@@ -66,6 +66,12 @@ export default function GroupOrderApp() {
       }
     });
 
+    newSocket.on('yalla-bell', (data: { senderName: string }) => {
+      // Play bell sound for all participants
+      playBellSound();
+      console.log(`${data.senderName} rang the YALLA bell!`);
+    });
+
     return () => {
       newSocket.close();
     };
@@ -137,6 +143,13 @@ export default function GroupOrderApp() {
       socket.emit('place-order', { roomId: room.id, hostUserId: currentUserId });
     } else {
       console.log('Cannot place order - not host or missing data');
+    }
+  };
+
+  const handleYallaBell = () => {
+    if (socket && room && participantName) {
+      console.log('YALLA bell clicked by:', participantName);
+      socket.emit('yalla-bell', { roomId: room.id, senderName: participantName, userId: currentUserId });
     }
   };
 
@@ -224,6 +237,7 @@ export default function GroupOrderApp() {
         currentUserId={currentUserId}
         isHost={isHost}
         onPlaceOrder={handlePlaceOrder}
+        onYallaBell={handleYallaBell}
       />
 
       {/* Room Status */}
