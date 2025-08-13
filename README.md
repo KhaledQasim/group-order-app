@@ -1,36 +1,125 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🍕 Bella Italia - Group Ordering App
 
-## Getting Started
+A real-time group ordering application built with Next.js, TypeScript, Tailwind CSS, and Socket.IO. Multiple users can join a shared room and collaboratively build an order together.
 
-First, run the development server:
+## ✨ Features
 
+- **Real-time synchronization** - All changes sync instantly across all devices
+- **QR Code sharing** - Easy room joining via QR code or shareable link
+- **Mobile-first design** - Optimized for phone usage
+- **Italian restaurant theme** - Pizza sizes (small, medium, large) and other menu items
+- **Group cart management** - See who added what to the shared cart
+- **Host/participant roles** - Room creator becomes the host
+
+## 🚀 Getting Started
+
+### 1. Start the WebSocket Server
+In the first terminal, run:
+```bash
+npm run socket
+```
+This starts the WebSocket server on port 3001.
+
+### 2. Start the Next.js App
+In a second terminal, run:
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+This starts the Next.js app on port 3000.
+
+### 3. Open the App
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## 📱 How to Use
+
+### Creating a Group Order (Host)
+1. Click the green "Group Order" button in the top right
+2. Enter your name
+3. Click "Create Room"
+4. Share the QR code or link with others
+
+### Joining a Group Order (Participant)
+1. Scan the QR code or open the shared link
+2. Enter your name
+3. Start adding items to the shared cart
+
+### Adding Items
+1. Browse the menu by category
+2. Select pizza sizes (small, medium, large) where applicable
+3. Adjust quantity with +/- buttons
+4. Click "Add to Cart"
+
+### Managing the Cart
+1. Click the "Cart" button to view shared items
+2. See who added each item
+3. Adjust quantities or remove items
+4. Place the group order when ready
+
+## 🛠 Tech Stack
+
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **Styling**: Tailwind CSS 4
+- **Real-time**: Socket.IO
+- **QR Codes**: react-qr-code
+- **UI Components**: Custom responsive components
+
+## 📁 Project Structure
+
+```
+src/
+├── app/
+│   ├── layout.tsx          # Root layout with metadata
+│   ├── page.tsx            # Main page with Suspense wrapper
+│   └── globals.css         # Global styles and Tailwind
+├── components/
+│   ├── GroupOrderApp.tsx   # Main app component
+│   ├── GroupOrderModal.tsx # Room creation/joining modal
+│   ├── MenuItem.tsx        # Individual menu item
+│   └── Cart.tsx           # Shared cart component
+├── lib/
+│   └── menuData.ts        # Restaurant menu data
+└── types/
+    └── index.ts           # TypeScript type definitions
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🔧 Development
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Available Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `npm run dev` - Start Next.js development server
+- `npm run socket` - Start WebSocket server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
 
-## Learn More
+### Key Features Implementation
 
-To learn more about Next.js, take a look at the following resources:
+- **WebSocket Integration**: Separate Node.js server (`server.js`) handles real-time communication
+- **URL Parameters**: Automatic room joining via `?room=<roomId>` URL parameter
+- **Responsive Design**: Mobile-first approach with proper touch targets
+- **Type Safety**: Full TypeScript implementation with custom types
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📸 Screenshots
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The app features:
+- Red primary theme with white background
+- Italian restaurant branding
+- Mobile-optimized interface
+- Real-time cart updates
+- QR code generation for easy sharing
 
-## Deploy on Vercel
+## 🚨 Important Notes
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. **Two Servers Required**: You must run both the WebSocket server (`npm run socket`) and the Next.js app (`npm run dev`) simultaneously
+2. **Mobile Focus**: The app is designed primarily for mobile devices
+3. **In-Memory Storage**: Cart data is stored in memory and will reset when the WebSocket server restarts
+4. **Local Development**: Currently configured for localhost - update server URLs for production deployment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🔮 Future Enhancements
+
+- Persistent cart storage
+- User authentication
+- Order history
+- Payment integration
+- Restaurant management panel
+- Push notifications
